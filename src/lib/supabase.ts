@@ -17,6 +17,15 @@ export type Note = {
   color: string;
   pinned: boolean;
   user_id: string;
+  category_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+  color: string;
+  user_id: string;
+  created_at: string;
 };
