@@ -1,8 +1,8 @@
-import { AuthProvider, useAuth } from '@/lib/auth-context';
-import { AuthPage } from '@/pages/AuthPage';
-import { NotesApp } from '@/pages/NotesApp';
-import { Toaster } from '@/components/ui/toaster';
-import { Loader2 } from 'lucide-react';
+import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { AuthPage } from "@/pages/AuthPage";
+import { NotesApp } from "@/pages/NotesApp";
+import { Toaster } from "@/components/ui/toaster";
+import { Loader2 } from "lucide-react";
 
 function AppContent() {
   const { user, loading } = useAuth();
