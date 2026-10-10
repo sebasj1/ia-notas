@@ -14,6 +14,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   NotebookPen,
   Plus,
   LogOut,
@@ -50,12 +57,17 @@ function formatDate(iso: string) {
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `hace ${mins} min`;
+  if (hours < 24) return `hace ${hours} h`;
+  if (days < 7) return `hace ${days} d`;
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+type DateSort = 'newest' | 'oldest';
+const ALL_CATEGORIES = 'all';
+const UNCATEGORIZED = '__uncat__';
+const NOTE_CONTENT_MAX = 500;
 
 type EditData = {
   id: string | null;
@@ -72,8 +84,10 @@ export function NotesApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES);
+  const [dateSort, setDateSort] = useState<DateSort>('newest');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [noteFormError, setNoteFormError] = useState<string | null>(null);
   const [editData, setEditData] = useState<EditData>({
     id: null, title: '', content: '', color: 'default', category_id: null,
   });
@@ -131,8 +145,11 @@ export function NotesApp() {
   function openNewNote() {
     setEditData({
       id: null, title: '', content: '', color: 'default',
-      category_id: activeCategory,
+      category_id: activeCategory !== ALL_CATEGORIES && activeCategory !== UNCATEGORIZED
+        ? activeCategory
+        : null,
     });
+    setNoteFormError(null);
     setDialogOpen(true);
   }
 
@@ -141,12 +158,18 @@ export function NotesApp() {
       id: note.id, title: note.title, content: note.content,
       color: note.color, category_id: note.category_id,
     });
+    setNoteFormError(null);
     setDialogOpen(true);
   }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!editData.title.trim()) return;
+    if (editData.content.length > NOTE_CONTENT_MAX) {
+      setNoteFormError(`El texto de la nota no puede tener más de ${NOTE_CONTENT_MAX} caracteres.`);
+      return;
+    }
+    setNoteFormError(null);
     setSaving(true);
 
     try {
@@ -173,7 +196,7 @@ export function NotesApp() {
       setDialogOpen(false);
       await fetchNotes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save note');
+      setError(err instanceof Error ? err.message : 'No se pudo guardar la nota');
     } finally {
       setSaving(false);
     }
@@ -228,7 +251,7 @@ export function NotesApp() {
       setCatDialogOpen(false);
       await fetchCategories();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create category');
+      setError(err instanceof Error ? err.message : 'No se pudo crear la categoría');
     } finally {
       setCatSaving(false);
     }
@@ -248,7 +271,7 @@ export function NotesApp() {
       setError(deleteError.message);
       return;
     }
-    if (activeCategory === deleteCatId) setActiveCategory(null);
+    if (activeCategory === deleteCatId) setActiveCategory(ALL_CATEGORIES);
     await fetchCategories();
     await fetchNotes();
   }
@@ -264,12 +287,23 @@ export function NotesApp() {
       ? n.title.toLowerCase().includes(search.toLowerCase()) ||
         n.content.toLowerCase().includes(search.toLowerCase())
       : true;
-    const matchesCategory = activeCategory ? n.category_id === activeCategory : true;
+    const matchesCategory =
+      activeCategory === ALL_CATEGORIES
+        ? true
+        : activeCategory === UNCATEGORIZED
+          ? !n.category_id
+          : n.category_id === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const pinnedNotes = filteredNotes.filter((n) => n.pinned);
-  const regularNotes = filteredNotes.filter((n) => !n.pinned);
+  const byDate = (a: Note, b: Note) => {
+    const da = new Date(a.updated_at).getTime();
+    const db = new Date(b.updated_at).getTime();
+    return dateSort === 'oldest' ? da - db : db - da;
+  };
+
+  const pinnedNotes = filteredNotes.filter((n) => n.pinned).sort(byDate);
+  const regularNotes = filteredNotes.filter((n) => !n.pinned).sort(byDate);
 
   const noteCountInCategory = (catId: string) => notes.filter((n) => n.category_id === catId).length;
   const uncatNoteCount = notes.filter((n) => !n.category_id).length;
@@ -296,7 +330,7 @@ export function NotesApp() {
               className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             >
               <LogOut className="w-4 h-4 mr-1.5" />
-              Sign Out
+              Cerrar sesión
             </Button>
           </div>
         </div>
@@ -308,12 +342,12 @@ export function NotesApp() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
               <Tags className="w-4 h-4 text-slate-400" />
-              Categories
+              Categorías
             </h2>
             <button
               onClick={openNewCategory}
               className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-              aria-label="New category"
+              aria-label="Nueva categoría"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -321,28 +355,28 @@ export function NotesApp() {
 
           <div className="space-y-1">
             <button
-              onClick={() => setActiveCategory(null)}
+              onClick={() => setActiveCategory(ALL_CATEGORIES)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                activeCategory === null
+                activeCategory === ALL_CATEGORIES
                   ? 'bg-blue-50 text-blue-700 font-medium'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               <FolderOpen className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left">All Notes</span>
+              <span className="flex-1 text-left">Todas las notas</span>
               <span className="text-xs text-slate-400">{notes.length}</span>
             </button>
 
             <button
-              onClick={() => setActiveCategory('__uncat__')}
+              onClick={() => setActiveCategory(UNCATEGORIZED)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                activeCategory === '__uncat__'
+                activeCategory === UNCATEGORIZED
                   ? 'bg-blue-50 text-blue-700 font-medium'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               <Folder className="w-4 h-4 shrink-0 text-slate-400" />
-              <span className="flex-1 text-left">Uncategorized</span>
+              <span className="flex-1 text-left">Sin categoría</span>
               <span className="text-xs text-slate-400">{uncatNoteCount}</span>
             </button>
 
@@ -366,7 +400,7 @@ export function NotesApp() {
                       confirmDeleteCategory(cat.id);
                     }}
                     className="p-0.5 rounded text-slate-300 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
-                    aria-label="Delete category"
+                    aria-label="Eliminar categoría"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -383,12 +417,37 @@ export function NotesApp() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search your notes..."
+                placeholder="Buscá tus notas..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-10 border-slate-200 bg-white"
               />
             </div>
+
+            <Select value={activeCategory} onValueChange={setActiveCategory}>
+              <SelectTrigger className="h-10 w-full sm:w-[200px] border-slate-200 bg-white" aria-label="Filtrar por categoría">
+                <SelectValue placeholder="Categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CATEGORIES}>Todas las categorías</SelectItem>
+                <SelectItem value={UNCATEGORIZED}>Sin categoría</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={dateSort} onValueChange={(value) => setDateSort(value as DateSort)}>
+              <SelectTrigger className="h-10 w-full sm:w-[220px] border-slate-200 bg-white" aria-label="Ordenar por fecha">
+                <SelectValue placeholder="Fecha" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Más reciente primero</SelectItem>
+                <SelectItem value="oldest">Más antiguo primero</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Mobile: New Category button */}
             <Button
@@ -397,7 +456,7 @@ export function NotesApp() {
               className="h-10 md:hidden font-medium"
             >
               <Tags className="w-4 h-4 mr-1.5" />
-              Category
+              Categoría
             </Button>
 
             <Button
@@ -405,18 +464,17 @@ export function NotesApp() {
               className="h-10 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-md shadow-blue-500/20 font-semibold"
             >
               <Plus className="w-4 h-4 mr-1.5" />
-              New Note
+              Nueva nota
             </Button>
           </div>
 
-          {/* Active category indicator */}
-          {activeCategory && (
+          {activeCategory !== ALL_CATEGORIES && (
             <div className="flex items-center gap-2 mb-4 text-sm">
-              <span className="text-slate-500">Filtering by:</span>
-              {activeCategory === '__uncat__' ? (
+              <span className="text-slate-500">Filtrando por:</span>
+              {activeCategory === UNCATEGORIZED ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
                   <Folder className="w-3.5 h-3.5" />
-                  Uncategorized
+                  Sin categoría
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
@@ -425,9 +483,9 @@ export function NotesApp() {
                 </span>
               )}
               <button
-                onClick={() => setActiveCategory(null)}
+                onClick={() => setActiveCategory(ALL_CATEGORIES)}
                 className="text-slate-400 hover:text-slate-600 transition-colors"
-                aria-label="Clear filter"
+                aria-label="Quitar filtro"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -451,12 +509,12 @@ export function NotesApp() {
                 <NotebookPen className="w-10 h-10 text-slate-300" />
               </div>
               <h3 className="text-lg font-semibold text-slate-700 mb-1">
-                {search || activeCategory ? 'No notes found' : 'No notes yet'}
+                {search || activeCategory !== ALL_CATEGORIES ? 'No se encontraron notas' : 'Todavía no hay notas'}
               </h3>
               <p className="text-sm text-slate-400 mb-4">
-                {search || activeCategory
-                  ? 'Try adjusting your search or filter.'
-                  : 'Create your first note to get started.'}
+                {search || activeCategory !== ALL_CATEGORIES
+                  ? 'Probá cambiar la búsqueda o el filtro.'
+                  : 'Creá tu primera nota para empezar.'}
               </p>
               {!search && (
                 <Button
@@ -464,7 +522,7 @@ export function NotesApp() {
                   className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 font-semibold"
                 >
                   <Plus className="w-4 h-4 mr-1.5" />
-                  Create Note
+                  Crear nota
                 </Button>
               )}
             </div>
@@ -474,7 +532,7 @@ export function NotesApp() {
                 <section>
                   <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
                     <Pin className="w-3.5 h-3.5" />
-                    Pinned
+                    Fijadas
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {pinnedNotes.map((note) => (
@@ -494,7 +552,7 @@ export function NotesApp() {
                 <section>
                   {pinnedNotes.length > 0 && (
                     <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                      All Notes
+                      Todas las notas
                     </h2>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -520,17 +578,17 @@ export function NotesApp() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editData.id ? 'Edit Note' : 'New Note'}</DialogTitle>
+            <DialogTitle>{editData.id ? 'Editar nota' : 'Nueva nota'}</DialogTitle>
             <DialogDescription>
-              {editData.id ? 'Make changes to your note below.' : 'Fill in the details for your new note.'}
+              {editData.id ? 'Modificá los datos de tu nota.' : 'Completá los datos de tu nueva nota.'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="note-title">Title</Label>
+              <Label htmlFor="note-title">Título</Label>
               <Input
                 id="note-title"
-                placeholder="Note title"
+                placeholder="Título de la nota"
                 value={editData.title}
                 onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                 autoFocus
@@ -538,19 +596,36 @@ export function NotesApp() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="note-content">Content</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="note-content">Contenido</Label>
+                <span
+                  className={`text-xs ${
+                    editData.content.length >= NOTE_CONTENT_MAX ? 'text-red-600 font-medium' : 'text-slate-400'
+                  }`}
+                >
+                  {editData.content.length}/{NOTE_CONTENT_MAX}
+                </span>
+              </div>
               <Textarea
                 id="note-content"
-                placeholder="Write your note here..."
+                placeholder="Escribí tu nota acá..."
                 value={editData.content}
-                onChange={(e) => setEditData({ ...editData, content: e.target.value })}
+                onChange={(e) => {
+                  const content = e.target.value.slice(0, NOTE_CONTENT_MAX);
+                  setEditData({ ...editData, content });
+                  if (content.length <= NOTE_CONTENT_MAX) setNoteFormError(null);
+                }}
+                maxLength={NOTE_CONTENT_MAX}
                 rows={6}
                 className="resize-none"
               />
+              {noteFormError && (
+                <p className="text-xs text-red-600">{noteFormError}</p>
+              )}
             </div>
             <div className="flex gap-4">
               <div className="space-y-2 flex-1">
-                <Label>Category</Label>
+                <Label>Categoría</Label>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -561,7 +636,7 @@ export function NotesApp() {
                         : 'border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    None
+                    Ninguna
                   </button>
                   {categories.map((cat) => {
                     const c = colorOf(cat.color);
@@ -585,7 +660,7 @@ export function NotesApp() {
                 </div>
                 {categories.length === 0 && (
                   <p className="text-xs text-slate-400">
-                    No categories yet. Create one from the sidebar.
+                    Todavía no hay categorías. Creá una desde el menú lateral.
                   </p>
                 )}
               </div>
@@ -614,15 +689,15 @@ export function NotesApp() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={saving}
+                disabled={saving || editData.content.length > NOTE_CONTENT_MAX}
                 className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 font-semibold"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editData.id ? 'Save Changes' : 'Create Note'}
+                {editData.id ? 'Guardar cambios' : 'Crear nota'}
               </Button>
             </div>
           </form>
@@ -633,17 +708,17 @@ export function NotesApp() {
       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>New Category</DialogTitle>
+            <DialogTitle>Nueva categoría</DialogTitle>
             <DialogDescription>
-              Create a category to organize your notes.
+              Creá una categoría para organizar tus notas.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveCategory} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="cat-name">Name</Label>
+              <Label htmlFor="cat-name">Nombre</Label>
               <Input
                 id="cat-name"
-                placeholder="e.g. Work, Personal, Ideas..."
+                placeholder="ej. Trabajo, Personal, Ideas..."
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
                 autoFocus
@@ -674,7 +749,7 @@ export function NotesApp() {
                 variant="outline"
                 onClick={() => setCatDialogOpen(false)}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 type="submit"
@@ -682,7 +757,7 @@ export function NotesApp() {
                 className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 font-semibold"
               >
                 {catSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Create
+                Crear
               </Button>
             </div>
           </form>
@@ -693,18 +768,18 @@ export function NotesApp() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete note?</DialogTitle>
+            <DialogTitle>¿Eliminar nota?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. The note will be permanently removed.
+              Esta acción no se puede deshacer. La nota se eliminará de forma permanente.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-1.5" />
-              Delete
+              Eliminar
             </Button>
           </div>
         </DialogContent>
@@ -714,18 +789,18 @@ export function NotesApp() {
       <Dialog open={deleteCatOpen} onOpenChange={setDeleteCatOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete category?</DialogTitle>
+            <DialogTitle>¿Eliminar categoría?</DialogTitle>
             <DialogDescription>
-              The category will be removed. Notes in this category will remain but become uncategorized.
+              Se eliminará la categoría. Las notas de esta categoría seguirán existiendo, pero quedarán sin categoría.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setDeleteCatOpen(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDeleteCategory}>
               <Trash2 className="w-4 h-4 mr-1.5" />
-              Delete
+              Eliminar
             </Button>
           </div>
         </DialogContent>
@@ -764,7 +839,7 @@ function NoteCard({
                 ? `${c.accent} opacity-100`
                 : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-500'
             }`}
-            aria-label={note.pinned ? 'Unpin note' : 'Pin note'}
+            aria-label={note.pinned ? 'Desfijar nota' : 'Fijar nota'}
           >
             {note.pinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
           </button>
@@ -788,14 +863,14 @@ function NoteCard({
             <button
               onClick={onEdit}
               className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-              aria-label="Edit note"
+              aria-label="Editar nota"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onDelete}
               className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-              aria-label="Delete note"
+              aria-label="Eliminar nota"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
