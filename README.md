@@ -110,10 +110,6 @@ Las **pruebas** verifican los siguientes casos:
 
 - Rechazo de títulos que contienen únicamente espacios en blanco.
 
-- Ejecutar las pruebas
-
-npm run test
-
 Resultado obtenido: 3 pruebas aprobadas.
 
 Archivo de pruebas: src/test/task.test.ts.
