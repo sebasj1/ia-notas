@@ -121,6 +121,7 @@ Archivo de pruebas: src/test/task.test.ts.
 
 ## 🚀 Despliegue
 La aplicación está desplegada en Netlify y vinculada al repositorio de GitHub.
+
 **URL de producción**: https://proy-task-manager.netlify.app/
 
 
@@ -133,6 +134,7 @@ Las claves privadas de servicio nunca deben exponerse en el frontend.
 
 
 ## 👨‍💻 Autor
+
 Desarrollado por Matias Jaramillo.
 
 **Github**: https://github.com/sebasj1/ia-notas.git
