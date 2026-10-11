@@ -25,19 +25,22 @@ Las tareas pueden clasificarse mediante categorías para facilitar su organizaci
 
  
 ## 📸 Screenshots
-- Inicio de sesión Login
+- Inicio de sesión Login: para el acceso o registro se necesita un correo y una contraseña entre 6 y 30 caracteres además de un simbolo.
 <img width="1296" height="616" alt="image" src="https://github.com/user-attachments/assets/5a9da16d-2d61-424d-9d07-0d320c60503f" />
 
 
-- Panel principal de Task Manager
+- Panel principal de Task Manager: Dashboard con las opciones generales.
 <img width="1352" height="561" alt="image" src="https://github.com/user-attachments/assets/87f7bc72-97aa-4186-aa97-776fbdaa55dc" />
 
+- Creación de una nota: cargar los datos de la nota agregando categorias, colores, etc.
+  <img width="525" height="618" alt="image" src="https://github.com/user-attachments/assets/42f260ec-76bf-4ace-bc27-5c076c7d85ec" />
 
-- Lista de tareas y filtros con notas cargadas
+
+- Lista de tareas y filtros con notas cargadas: visualización de todas las notas presentes en la pantalla principal.
 <img width="1341" height="609" alt="image" src="https://github.com/user-attachments/assets/ab5b3bf5-058b-40cb-83ba-2854c6637422" />
 
 
- - Lista de tareas con filtro activado
+ - Lista de tareas con filtro activado: permiten encontrar rapidamente las notas ademas del buscador.
  <img width="1333" height="612" alt="image" src="https://github.com/user-attachments/assets/dbec5069-8208-49d4-ae3c-f16cedfdb3c9" />
 
 
