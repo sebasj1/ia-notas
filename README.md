@@ -1,12 +1,26 @@
 Task Manager — Gestor de tareas/notas
 
-Aplicación web para organizar tareas personales de forma sencilla. Permite crear, editar, completar y eliminar tareas, organizarlas por categorías y filtrarlas según su estado.
+Aplicación web para organizar tareas o notas personales de forma sencilla. Permite crear, editar, completar y eliminar tareas, organizarlas por categorías y filtrarlas según su estado.
+
+📖 Funcionalidades en detalle
+🔐 Inicio de sesión
+Los usuarios pueden acceder a la aplicación utilizando su correo electrónico y contraseña para gestionar sus propias notas y tareas.
+
+📝 Administración de notas y tareas
+La aplicación permite realizar las operaciones principales de gestión:
+Crear: agregar una nueva nota/tarea.
+Consultar: visualizar los elementos guardados.
+Editar: actualizar la información de una nota.
+Eliminar: borrar elementos que ya no se necesitan.
+
+🏷️ Organización y filtros
+Las tareas pueden clasificarse mediante categorías para facilitar su organización. También es posible aplicar filtros por fecha y categoría para encontrar información de manera más rápida y eficiente.
+
 
 🚀 Demo online
-
 Aplicación desplegada:  https://proy-task-manager.netlify.app/
+Repositorio:   https://github.com/sebasj1/ia-notas.git
 
-Repositorio:  https://github.com/seba/ias.git
  
 📸 Screenshots
 1-Inicio de sesión Login
@@ -40,50 +54,38 @@ shadcn/ui: componentes de interfaz.
 Supabase: autenticación, base de datos y almacenamiento.
 Vite: servidor de desarrollo y compilación.
 Vitest: pruebas automatizadas.
+Cursor: edición de codigo.
+
 
 📋 Requisitos previos
 Node.js.
-Una cuenta de Supabase para habilitar los servicios del backend.
+Una cuenta de Supabase para habilitar los servicios del backend o uso de Docker en forma local.
 
 ⚙️ Instalación y configuración
 1. Clonar el repositorio
-git clone https://github.com/seba/ias.git
+git clone  https://github.com/sebasj1/ia-notas.git
 cd ia-notas
 
 2. Instalar dependencias
 npm install
 
-3. Configurar las variables de entorno
+3. Configurar las variables de entorno  
 
 Crear un archivo .env en la raíz del proyecto, tomando como referencia .env.example.
 
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=tu_clave_publica
 
-
-Obtener los valores desde la configuración del proyecto en Supabase.
-
-El repositorio incluye un archivo `.env.example` con los nombres de las variables necesarias para configurar la conexión con Supabase.
-
-Para ejecutar el proyecto localmente, crear un archivo `.env` con los valores correspondientes a tu proyecto.
-
-No subir credenciales privadas ni el archivo `.env` al repositorio.
-
+Obtener los valores  necesarios para configurar la conexión desde el proyecto en Supabase.
+ 
 4. Ejecutar en desarrollo
 npm run dev
-
-
-Abrir en el navegador la dirección local que indique Vite, normalmente http://localhost:5173.
 
 5. Generar la versión de producción
 npm run build
 
 6. Ejecutar las pruebas
 npm run test
-
-
-Este comando requiere que las pruebas estén configuradas en package.json.
-
 
 El proyecto utiliza Vitest para ejecutar pruebas automatizadas de validación de tareas.
 
@@ -98,17 +100,18 @@ Resultado obtenido: 3 pruebas aprobadas.
 
 Archivo de pruebas: src/test/task.test.ts.
 
+
 🚀 Despliegue
 La aplicación está desplegada en Netlify y vinculada al repositorio de GitHub.
-
-Para publicar nuevas versiones, se pueden enviar los cambios al repositorio y utilizar la integración de despliegue configurada en Netlify.
-
 URL de producción: https://proy-task-manager.netlify.app/
+
 
 🔐 Seguridad
 Las variables de entorno reales no deben subirse a GitHub.
 Las tablas de Supabase deben contar con políticas RLS adecuadas.
 Las claves privadas de servicio nunca deben exponerse en el frontend.
 
+
 👨‍💻 Autor
-Proyecto académico de gestión de tareas desarrollado con React, TypeScript y Supabase.
+Desarrollado por Matias Jaramillo.
+Github: https://github.com/sebasj1/ia-notas.git
